@@ -18,7 +18,7 @@ cargo build --release
 
 Takes:
 
-***input_file.faa.gz**
+**input_file.faa.gz**
 ```
 >WP_188403107.1 hypothetical protein [Fictibacillus barbaricus]
 MEQKETFFVTAKGDIQPLPTDDHVHYFEIQATYDEKQQIDHLFTQIHANNKQEGLDIFSPKRHFSESHAEYHRGKDSKLV
@@ -29,7 +29,8 @@ NETNFDKLIVDLLKHHEKNPAKTLVLASPDTPLFRDKAENIKQALDDLGIVRFWVKENGSIEWE
 ```
 
 And outputs:
-***input_file.faa.gz.fasta**
+
+**input_file.faa.gz.fasta**
 ```
 >POt5XgLIthEqNIqvXB1PiFGkhjgwufcK
 MEQKETFFVTAKGDIQPLPTDDHVHYFEIQATYDEKQQIDHLFTQIHANNKQEGLDIFSPKRHFSESHAEYHRGKDSKLV
