@@ -1,5 +1,3 @@
-crabhash
-
 ### Background 
 
 The hash method (*sha512t24u*) used is described here:
