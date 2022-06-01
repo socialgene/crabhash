@@ -53,7 +53,6 @@ KFMMpfPfblX3Bbrhtk40mJ5rwFi40OfA	WP_188403108.1
 
 
 _____________
- target/release/fastatools get-entry '/home/chase/Downloads/temp/aa/data' '/home/chase/Downloads/temp/aa/data.index' UjF_YxTKlIX4Qlt8DFeHycfpVbXQJO7C
 
 ```
 git clone https://github.com/nickmachnik/fastatools.git
@@ -61,6 +60,8 @@ cd fastatools
 cargo test
 cargo build --release
 ./target/release/fastatools -h
+
+ target/release/fastatools get-entry '/home/chase/Downloads/temp/aa/data' '/home/chase/Downloads/temp/aa/data.index' UjF_YxTKlIX4Qlt8DFeHycfpVbXQJO7C
 ```
 
 
