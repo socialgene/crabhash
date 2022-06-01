@@ -1,5 +1,11 @@
 crabhash
 
+### Background 
+
+The hash method (*sha512t24u*) used is described here:
+https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7714221/
+
+
 ### Use
 ```sh
 git clone https://github.com/socialgene/crabhash.git
