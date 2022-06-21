@@ -36,7 +36,7 @@ fn parse_config(args: &[String]) -> &str {
 
 fn hash_and_write(record: &RefRecord, mut fasta_file: &File, mut tsv_file: &File) {
     let mut hasher = Sha512::new();
-    let seq_str = String::from_utf8_lossy(record.seq()).to_string().replace('\n', ""); 
+    let seq_str = String::from_utf8_lossy(record.seq()).to_string().replace('\n', "").replace('\r', ""); 
     hasher.update(&seq_str);
     let result = hasher.finalize();
     let ss = &result[0..24];
