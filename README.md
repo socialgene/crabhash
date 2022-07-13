@@ -12,10 +12,10 @@ cd crabhash
 
 cargo build --release 
 
-./target/release/hash_proteins \
-    '/glob/pattern/to/match/fasta/files' \
-    '/output/directory/' \
-    ncpus
+./target/release/crabhash \
+    '/home/chase/Documents/data/mibig_and_genomes/*.gz' \
+    '/home/chase/Downloads/temp' \
+    10
 ```
 
 ### Outputs
@@ -61,7 +61,7 @@ cargo test
 cargo build --release
 ./target/release/fastatools -h
 
- target/release/fastatools get-entry '/home/chase/Downloads/temp/aa/data' '/home/chase/Downloads/temp/aa/data.index' UjF_YxTKlIX4Qlt8DFeHycfpVbXQJO7C
+ target/release/fastatools get-entry '/home/cse/Downloads/temp'  10hase/Downloads/temp/aa/data' '/home/chase/Downloads/temp/aa/data.index' UjF_YxTKlIX4Qlt8DFeHycfpVbXQJO7C
 ```
 
 

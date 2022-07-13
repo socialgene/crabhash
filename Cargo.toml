@@ -1,7 +1,8 @@
 [package]
 name = "crabhash"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
+author = "Chase M Clark"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -12,3 +13,4 @@ flate2 = "*"
 glob = "*"
 seq_io = "*"
 scoped_threadpool = "*"
+clap = { version = "3.2.8", features = ["derive"] }
