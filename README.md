@@ -12,7 +12,7 @@ cd crabhash
 
 cargo build --release 
 
-./target/release/hash_proteins \
+./target/release/crabhash \
     '/glob/pattern/to/match/fasta/files' \
     '/output/directory/' \
     ncpus
