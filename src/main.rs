@@ -13,21 +13,31 @@ use base64;
 use flate2::read::GzDecoder;
 use scoped_threadpool::Pool;
 
-fn get_reader(path: &PathBuf) -> Box<dyn BufRead + Send> {
-    let mut filetype = "unzip";
-    let filename_str = path.to_str().unwrap();
-    let file = match File::open(path) {
-            Ok(file) => file,
-            Err(error) => panic!("Error opening compressed file: {:?}.", error),
-        };
-    if filename_str.ends_with(".gz")  {filetype = "zip";}
-    if filename_str.ends_with(".lz4") {filetype = "lz4";}
-    let reader :Box<dyn BufRead + Send> = match filetype { 
-        "zip" => Box::new(BufReader::new(GzDecoder::new(file))), 
-        _ =>     Box::new(BufReader::new(file)), 
-    }; 
-    reader
-}
+
+mod filehandling;
+
+
+//let (mut input, _) = filehandling::get_input(buf.to_str()?)?;
+//let (mut input, _) = filehandling::get_output()
+
+
+
+
+// fn get_reader(path: &PathBuf) -> Box<dyn BufRead + Send> {
+//     let mut filetype = "unzip";
+//     let filename_str = path.to_str().unwrap();
+//     let file = match File::open(path) {
+//             Ok(file) => file,
+//             Err(error) => panic!("Error opening compressed file: {:?}.", error),
+//         };
+//     if filename_str.ends_with(".gz")  {filetype = "zip";}
+//     if filename_str.ends_with(".lz4") {filetype = "lz4";}
+//     let reader :Box<dyn BufRead + Send> = match filetype { 
+//         "zip" => Box::new(BufReader::new(GzDecoder::new(file))), 
+//         _ =>     Box::new(BufReader::new(file)), 
+//     }; 
+//     reader
+// }
 
 fn parse_config(args: &[String]) -> &str {
     let dirpath = &args[1];
@@ -90,8 +100,9 @@ fn main()  {
             let (fasta_file,tsv_file) = create_outpaths(&args, &filename_string);                       
             scoped.execute( move || {
                         // create output files
-                        let buf = get_reader(&entry);
-                        let mut reader = seq_io::fasta::Reader::new(buf);
+                        let (mut input, _) = filehandling::get_input( &filename_string).unwrap();
+                        //let buf = get_reader(&entry);
+                        let mut reader = seq_io::fasta::Reader::new(&mut input);
                         while let Some(record) = reader.next() {
                             let record = record.unwrap();
                             hash_and_write(&record, &fasta_file, &tsv_file)                      
