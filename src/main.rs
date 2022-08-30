@@ -41,15 +41,21 @@ fn hash_and_write(record: &RefRecord, mut fasta_file: &File, mut tsv_file: &File
     let result = hasher.finalize();
     let ss = &result[0..24];
     let encoded = base64::encode_config(&ss, base64::URL_SAFE);
-    fasta_file.write_all(b">").expect("write failed");
-    fasta_file.write_all(&encoded.as_bytes()).expect("write failed");
-    fasta_file.write_all(b"\n").expect("write failed");
-    fasta_file.write_all(&seq_str.as_bytes()).expect("write failed");
-    fasta_file.write_all(b"\n").expect("write failed");
-    tsv_file.write_all(&encoded.as_bytes()).expect("write failed");
-    tsv_file.write_all(b"\t").expect("write failed");
-    tsv_file.write_all(record.id().unwrap().as_bytes()).expect("write failed");
-    tsv_file.write_all(b"\n").expect("write failed");
+    let mut owned_string: String = "".to_owned();
+    
+    owned_string.push_str(">");
+    owned_string.push_str(&encoded);
+    owned_string.push_str("\n");
+    owned_string.push_str(&seq_str);
+    owned_string.push_str("\n");
+    fasta_file.write_all(&owned_string.as_bytes()).expect("write failed");
+    
+    let mut owned_string2: String = "".to_owned();
+    owned_string2.push_str(&encoded);
+    owned_string2.push_str("\t");
+    owned_string2.push_str(record.id().unwrap());
+    owned_string2.push_str("\n");
+    tsv_file.write_all(&owned_string2.as_bytes()).expect("write failed");
 }
 
 fn create_outpaths(args: &[String], filename_string: &String) -> (File, File)  {
