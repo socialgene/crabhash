@@ -1,7 +1,6 @@
 
 use std::env;
 use std::fs::File;
-use std::io::{BufRead, BufReader};
 use seq_io::fasta::{Record, RefRecord};
 use std::io::Write;
 use std::path::PathBuf;
@@ -10,34 +9,15 @@ use glob::MatchOptions;
 use sha2::{Sha512, Digest};
 use base64;
 //use grep_cli::stdout; //https://users.rust-lang.org/t/why-is-this-rust-loop-3x-slower-when-writing-to-disk/30489/3
-use flate2::read::GzDecoder;
 use scoped_threadpool::Pool;
 
 
 mod filehandling;
 
 
-//let (mut input, _) = filehandling::get_input(buf.to_str()?)?;
-//let (mut input, _) = filehandling::get_output()
 
 
 
-
-// fn get_reader(path: &PathBuf) -> Box<dyn BufRead + Send> {
-//     let mut filetype = "unzip";
-//     let filename_str = path.to_str().unwrap();
-//     let file = match File::open(path) {
-//             Ok(file) => file,
-//             Err(error) => panic!("Error opening compressed file: {:?}.", error),
-//         };
-//     if filename_str.ends_with(".gz")  {filetype = "zip";}
-//     if filename_str.ends_with(".lz4") {filetype = "lz4";}
-//     let reader :Box<dyn BufRead + Send> = match filetype { 
-//         "zip" => Box::new(BufReader::new(GzDecoder::new(file))), 
-//         _ =>     Box::new(BufReader::new(file)), 
-//     }; 
-//     reader
-// }
 
 fn parse_config(args: &[String]) -> &str {
     let dirpath = &args[1];
