@@ -14,7 +14,10 @@ use scoped_threadpool::Pool;
 
 mod filehandling;
 
-
+// Import the base64 crate Engine trait anonymously so we can
+// call its methods without adding to the namespace.
+use base64::engine::Engine as _;
+use base64::engine::general_purpose::STANDARD as BASE64;
 
 
 
@@ -30,7 +33,7 @@ fn hash_and_write(record: &RefRecord, mut fasta_file: &File, mut tsv_file: &File
     hasher.update(&seq_str);
     let result = hasher.finalize();
     let ss = &result[0..24];
-    let encoded = base64::encode_config(&ss, base64::URL_SAFE);
+    let encoded = BASE64.encode(&ss);
     let mut owned_string: String = "".to_owned();
     
     owned_string.push_str(">");
