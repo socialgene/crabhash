@@ -13,9 +13,8 @@ cd crabhash
 cargo build --release 
 
 ./target/release/crabhash \
-    '/glob/pattern/to/match/fasta/files' \
-    '/output/directory/' \
-    ncpus
+    'input_file.faa.gz' \
+    '/output/directory/' 
 ```
 
 ### Outputs
@@ -34,7 +33,7 @@ NETNFDKLIVDLLKHHEKNPAKTLVLASPDTPLFRDKAENIKQALDDLGIVRFWVKENGSIEWE
 
 And outputs:
 
-***input_file.faa.gz.tsv**
+***/output/directory/input_file.faa.gz.tsv**
 ```
 POt5XgLIthEqNIqvXB1PiFGkhjgwufcK	WP_188403107.1
 KFMMpfPfblX3Bbrhtk40mJ5rwFi40OfA	WP_188403108.1
