@@ -33,7 +33,7 @@ NETNFDKLIVDLLKHHEKNPAKTLVLASPDTPLFRDKAENIKQALDDLGIVRFWVKENGSIEWE
 
 And outputs:
 
-***/output/directory/input_file.faa.gz.tsv**
+**/output/directory/input_file.faa.gz.tsv**
 ```
 POt5XgLIthEqNIqvXB1PiFGkhjgwufcK	WP_188403107.1
 KFMMpfPfblX3Bbrhtk40mJ5rwFi40OfA	WP_188403108.1
