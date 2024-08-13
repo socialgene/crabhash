@@ -1,78 +1,83 @@
-
+use std::collections::HashSet;
 use std::env;
 use std::fs::File;
-use seq_io::fasta::{Record, RefRecord};
-use std::io::{BufWriter, Write};
-use std::fs;
-
-use std::path::PathBuf;
+use std::io::{self, BufRead, BufReader, Write, Read};
 use std::path::Path;
-use glob::glob_with;
+use flate2::read::GzDecoder;
+use flate2::write::GzEncoder;
+use flate2::Compression;
 use sha2::{Sha512, Digest};
-use base64;
-//use grep_cli::stdout; //https://users.rust-lang.org/t/why-is-this-rust-loop-3x-slower-when-writing-to-disk/30489/3
-use scoped_threadpool::Pool;
+use base64::Engine;
+use seq_io::fasta::{self, Record};
 
-
-mod filehandling;
-
-use base64::{Engine as _, engine::general_purpose};
-
-
-
-
-
-fn main()  {
+fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
+    if args.len() != 3 {
+        eprintln!("Usage: {} <input_list_file> <output_fasta_file>", args[0]);
+        std::process::exit(1);
+    }
 
-    let input_file = Path::new(&args[1]);
-    
-    let filename = &input_file.file_stem().unwrap();
-    let filename_string = &input_file.file_stem().unwrap().to_str().unwrap();
+    let input_list_file = &args[1];
+    let output_fasta_file = &args[2];
 
-    let outdir = Path::new(&args[2]);
+    let fasta_files = read_fasta_file_paths(input_list_file)?;
+    let mut seen_hashes = HashSet::new();
+    let output_file = File::create(output_fasta_file)?;
+    let mut output = GzEncoder::new(output_file, Compression::default());
 
-    let mut tsv_pathbuf = PathBuf::from(&outdir);
+    let mut file_count = 0;
+    let mut total_sequences = 0;
 
-    tsv_pathbuf.push(&[&filename_string, ".tsv"].join(""));
-    
-    let (mut input, _) = filehandling::get_input(&args[1]).unwrap();
+    for fasta_path in &fasta_files {
+        file_count += 1;
+        let file_path = Path::new(fasta_path);
+        if let Ok(file) = File::open(file_path) {
+            let reader = BufReader::new(GzDecoder::new(file));
+            match process_fasta_file(reader, &mut seen_hashes, &mut output) {
+                Ok((sequences_in_file, ())) => total_sequences += sequences_in_file,
+                Err(e) => eprintln!("Error processing file {}: {:?}", file_path.display(), e),
+            }
+            println!("Processed file {} ({}/{})", file_path.display(), file_count, fasta_files.len());
+        } else {
+            eprintln!("Could not open file: {}", file_path.display());
+        }
+    }
 
-    let mut reader = seq_io::fasta::Reader::new(&mut input);
+    println!("Total sequences processed: {}", total_sequences);
 
-    let mut n = 0;
-    print!("Finished 0 million sequences");
-    let tt = std::fs::File::create(&tsv_pathbuf).expect("create failed");
-    let mut tsv_file = BufWriter::new(tt);
+    Ok(())
+}
 
+fn read_fasta_file_paths(file_path: &str) -> io::Result<Vec<String>> {
+    let file = File::open(file_path)?;
+    let reader = BufReader::new(file);
+    reader.lines().collect()
+}
+
+fn process_fasta_file<R: Read>(
+    reader: R,
+    seen_hashes: &mut HashSet<String>,
+    output: &mut impl Write,
+) -> Result<(usize, ()), io::Error> {
+    let mut reader = fasta::Reader::new(reader);
+    let mut sequence_count = 0;
 
     while let Some(record) = reader.next() {
-        let record2 = record.unwrap();
+        let record = record.map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+        let seq_str = String::from_utf8_lossy(record.seq()).to_string().replace('\n', "").replace('\r', ""); 
         let mut hasher = Sha512::new();
-        let seq_str = String::from_utf8_lossy(record2.seq()).to_string().replace('\n', "").replace('\r', ""); 
-        hasher.update(&seq_str);
+        hasher.update(seq_str.as_bytes());
         let result = hasher.finalize();
         let ss = &result[0..24];
-        // Conistent with Python's RFC 3548 base64.urlsafe_b64encode
-        let encoded = general_purpose::URL_SAFE_NO_PAD.encode(&ss);
+        let encoded = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(ss);
 
-        let mut s = String::new();
-
-        s.push_str(&encoded);
-        s.push_str("\t");
-        s.push_str(record2.id().unwrap());
-        s.push_str("\n");
-        
-        if n % 1000000 == 0 {
-            print!("\r Finished {} x million sequences", n/1000000);
+        if !seen_hashes.contains(&encoded) {
+            seen_hashes.insert(encoded.clone());
+            writeln!(output, ">{}", encoded)?;
+            writeln!(output, "{}", seq_str)?;
+            sequence_count += 1;
         }
-        n += 1;
-        tsv_file.write_all(&s.as_bytes()).expect("write failed");
+    }
 
-
-    }   
-
-
-    
-    tsv_file.flush().unwrap();
+    Ok((sequence_count, ()))
 }
