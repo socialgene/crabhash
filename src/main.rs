@@ -38,7 +38,7 @@ fn main() -> io::Result<()> {
     let mut total_not_added_to_nr = 0;
 
     let mut source_files_map = HashMap::new();
-    let mut protein_map = HashMap::new();
+    let mut protein_map = Vec::new();  // Use Vec to allow duplicates
 
     for (index, fasta_path) in fasta_files.iter().enumerate() {
         file_count += 1;
@@ -118,7 +118,7 @@ fn process_fasta_file<R: Read>(
     seen_hashes: &mut HashSet<String>,
     output: &mut impl Write,
     file_index: u32,
-    protein_map: &mut HashMap<(u32, String), String>,
+    protein_map: &mut Vec<(u32, String, String)>, // Updated to use Vec to allow duplicates
 ) -> Result<(usize, usize, usize), io::Error> {
     let mut reader = fasta::Reader::new(reader);
     let mut sequence_count = 0;
@@ -128,42 +128,62 @@ fn process_fasta_file<R: Read>(
 
     while let Some(record) = reader.next() {
         let record = record.map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
-        let seq_bytes = record.seq();
-        hasher.update(seq_bytes);
+        let mut seq_bytes = record.seq().to_vec();
+
+        // Remove '*' from the end of the sequence
+        if let Some(last_byte) = seq_bytes.last() {
+            if *last_byte == b'*' {
+                seq_bytes.pop();
+            }
+        }
+
+        // Convert the sequence to uppercase
+        seq_bytes.make_ascii_uppercase();
+
+        hasher.update(&seq_bytes);
         let result = hasher.finalize_reset(); // reset the hasher for the next sequence
         let ss = &result[0..24];
         let encoded = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(ss);
 
+        if let Ok(id) = record.id() {
+            // Add to the protein_map with the hash and original ID
+            protein_map.push((file_index, encoded.clone(), id.to_string()));
+        }
+
         if !seen_hashes.contains(&encoded) {
             seen_hashes.insert(encoded.clone());
             writeln!(output, ">{}", encoded)?;
-            writeln!(output, "{}", String::from_utf8_lossy(seq_bytes))?;
+            writeln!(output, "{}", String::from_utf8_lossy(&seq_bytes))?;
             added_to_nr += 1;
-            if let Ok(id) = record.id() {
-                protein_map.insert((file_index, encoded.clone()), id.to_string());
-            }
         } else {
             not_added_to_nr += 1;
         }
         sequence_count += 1;
     }
 
+    println!(
+        "File {} processed: {} sequences, {} added to nr, {} not added to nr",
+        file_index, sequence_count, added_to_nr, not_added_to_nr
+    );
+
     Ok((sequence_count, added_to_nr, not_added_to_nr))
 }
 
 fn append_source_files_tsv(file_path: &str, data: &HashMap<u32, String>) -> io::Result<()> {
     let file = OpenOptions::new().create(true).append(true).open(file_path)?;
-    let mut writer = BufWriter::new(file);
+    let gz_file = GzEncoder::new(file, Compression::default());
+    let mut writer = BufWriter::new(gz_file);
     for (index, path) in data {
         writeln!(writer, "{}\t{}", index, path)?;
     }
     Ok(())
 }
 
-fn append_map_tsv(file_path: &str, data: &HashMap<(u32, String), String>) -> io::Result<()> {
+fn append_map_tsv(file_path: &str, data: &[(u32, String, String)]) -> io::Result<()> {
     let file = OpenOptions::new().create(true).append(true).open(file_path)?;
-    let mut writer = BufWriter::new(file);
-    for ((file_index, hash), original_id) in data {
+    let gz_file = GzEncoder::new(file, Compression::default());
+    let mut writer = BufWriter::new(gz_file);
+    for (file_index, hash, original_id) in data {
         writeln!(writer, "{}\t{}\t{}", file_index, hash, original_id)?;
     }
     Ok(())
