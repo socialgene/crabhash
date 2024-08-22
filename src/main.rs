@@ -112,7 +112,6 @@ fn read_fasta_file_paths(file_path: &str) -> io::Result<Vec<String>> {
     let reader = BufReader::new(file);
     reader.lines().collect()
 }
-
 fn process_fasta_file<R: Read>(
     reader: R,
     seen_hashes: &mut HashSet<String>,
@@ -130,11 +129,11 @@ fn process_fasta_file<R: Read>(
         let record = record.map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
         let mut seq_bytes = record.seq().to_vec();
 
-        // Remove '*' from the end of the sequence
-        if let Some(last_byte) = seq_bytes.last() {
-            if *last_byte == b'*' {
-                seq_bytes.pop();
-            }
+        while seq_bytes.first().map_or(false, |&c| c == b'*' || c.is_ascii_whitespace()) {
+            seq_bytes.remove(0);
+        }
+        while seq_bytes.last().map_or(false, |&c| c == b'*' || c.is_ascii_whitespace()) {
+            seq_bytes.pop();
         }
 
         // Convert the sequence to uppercase
