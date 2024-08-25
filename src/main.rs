@@ -112,6 +112,7 @@ fn read_fasta_file_paths(file_path: &str) -> io::Result<Vec<String>> {
     let reader = BufReader::new(file);
     reader.lines().collect()
 }
+
 fn process_fasta_file<R: Read>(
     reader: R,
     seen_hashes: &mut HashSet<String>,
@@ -124,10 +125,17 @@ fn process_fasta_file<R: Read>(
     let mut added_to_nr = 0;
     let mut not_added_to_nr = 0;
     let mut hasher = Sha512::new();
+    
+    let mut unique_map_entries = HashSet::new(); // Track unique map entries
 
     while let Some(record) = reader.next() {
         let record = record.map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
-        let mut seq_bytes = record.seq().to_vec();
+        
+        // Concatenate the sequence into a single string
+        let mut seq_bytes = Vec::new();
+        for line in record.seq_lines() {
+            seq_bytes.extend_from_slice(line);
+        }
 
         while seq_bytes.first().map_or(false, |&c| c == b'*' || c.is_ascii_whitespace()) {
             seq_bytes.remove(0);
@@ -145,8 +153,11 @@ fn process_fasta_file<R: Read>(
         let encoded = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(ss);
 
         if let Ok(id) = record.id() {
-            // Add to the protein_map with the hash and original ID
-            protein_map.push((file_index, encoded.clone(), id.to_string()));
+            // Check if the entry is unique before adding to the map
+            let map_entry = (file_index, encoded.clone(), id.to_string());
+            if unique_map_entries.insert(map_entry.clone()) {
+                protein_map.push(map_entry);
+            }
         }
 
         if !seen_hashes.contains(&encoded) {
@@ -167,6 +178,7 @@ fn process_fasta_file<R: Read>(
 
     Ok((sequence_count, added_to_nr, not_added_to_nr))
 }
+
 
 fn append_source_files_tsv(file_path: &str, data: &HashMap<u32, String>) -> io::Result<()> {
     let file = OpenOptions::new().create(true).append(true).open(file_path)?;
