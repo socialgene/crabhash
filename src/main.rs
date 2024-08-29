@@ -10,7 +10,7 @@ use sha2::{Sha512, Digest};
 use base64::Engine;
 use seq_io::fasta::{self, Record};
 
-const FLUSH_THRESHOLD: usize = 1000;  // Number of sequences to process before flushing
+const FLUSH_THRESHOLD: usize = 1000000;  // Number of sequences to process before flushing
 
 fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -75,6 +75,10 @@ fn main() -> io::Result<()> {
         }
     }
 
+    // Final flush and drop of the output to ensure all data is written
+    output.flush()?;
+    drop(output);  // Explicitly drop the GzEncoder to finalize the compression
+
     let summary = format!("Total sequences processed: {}", total_sequences);
     println!("{}", summary);
     writeln!(log, "{}", summary)?;
@@ -106,7 +110,6 @@ fn read_fasta_file_paths(file_path: &str) -> io::Result<Vec<String>> {
     let reader = BufReader::new(file);
     reader.lines().collect()
 }
-
 fn process_fasta_file<R: Read>(
     reader: R,
     seen_hashes: &mut HashSet<[u8; 24]>,
@@ -181,8 +184,11 @@ fn process_fasta_file<R: Read>(
     append_source_files_tsv(source_files_tsv, source_files_map, seen_sources)?;
     append_map_tsv(map_tsv, &protein_map)?;
 
+    println!("Total sequences processed in this file: {}", sequence_count);
+
     Ok((sequence_count, added_to_nr, not_added_to_nr))
 }
+
 
 fn append_source_files_tsv(file_path: &str, data: &HashMap<u32, String>, seen_sources: &mut HashSet<String>) -> io::Result<()> {
     let file = OpenOptions::new().create(true).append(true).open(file_path)?;
